@@ -9,7 +9,7 @@ use serialport::StopBits;
 
 fn main() 
 {
-    const PORT_TO_CONNECT:&str = "COM9";
+    const PORT_TO_CONNECT:&str = "/dev/ttyACM0";
 
     println!("Serial Ports:");
     let ports = serialport::available_ports().expect("No ports found!");
@@ -34,7 +34,7 @@ fn main()
     }
 
     // we have a port!
-    let mut port = serialport::new(PORT_TO_CONNECT, 375_000)
+    let mut port = serialport::new(PORT_TO_CONNECT, 1465)//375_000)
         .data_bits(DataBits::Eight)
         .parity(Parity::None)
         .stop_bits(StopBits::One)
@@ -57,5 +57,11 @@ fn main()
 
 fn wrong_answer(input:u8) -> u8
 {
-    (input >> 1) | 0x80
+    return (input >> 1) | 0x80;
+    if input & 0x80 != 0
+    {
+        return (input << 1) & 0xfE;
+    }
+
+    return 0xFF;
 }
