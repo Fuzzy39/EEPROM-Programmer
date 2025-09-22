@@ -84,9 +84,10 @@ int main(void)
 
 void setSpeed(libusb_device_handle* handle, DeviceSpeed speed)
 {
+    int dividerSlow = 3;
     // baud, fortunately, isn't too bad to calculate.
     const int MAX_CLOCK = 12000000; // 12 mhz
-    int baud = MAX_CLOCK>>speed>>3; // the 2 is there because of the current placement of the jumper wire.
+    int baud = MAX_CLOCK>>speed>>dividerSlow; // the 2 is there because of the current placement of the jumper wire.
     std::cout<<"Setting speed to "<<std::dec<<baud<<" baud\n";
 
     unsigned char data[] = {0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x08}; // according to page 32 in the usb pstn doc, this will set line coding.
@@ -102,10 +103,38 @@ void setSpeed(libusb_device_handle* handle, DeviceSpeed speed)
 
 
     // now we update the clock settings in the hid device.
-    int shiftsToMCP = 0;//speed-5+2; //the counter divides by 32 and the mcp expects values shifted from 48 mhz (double check!)
-    ChipSettings settings = ChipSettings(handle);
-    settings.clockDivider = shiftsToMCP;
-    settings.updateSettings(handle);
+    // okay, whatever, logs!
+    int baudtoMCP = MAX_CLOCK>>(speed-5); // compensate for hardware divider
+    std::cout<<"MCP speed: "<<baudtoMCP<<"\n";
+    int shiftsToMCP = (log(12000000/baudtoMCP)/log(2))+2; //the counter divides by 32, the max clock speed 
+    std::cout<<"shifts to MCP:"<<shiftsToMCP<<"\n";
+
+    // we have to send a command to the HID device now...
+    size_t commandSize = 0x40;
+    u_int8_t * command = (u_int8_t*)calloc(commandSize, sizeof(u_int8_t));
+    command[0]=0x60; // set SRAM settings
+    // change the clock speed
+    command[2]=0b10010000 | shiftsToMCP;
+    // we can leave everything else 0 and we should be fine
+
+    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|OUT, command, commandSize, &transfered, TIMEOUT));
+    if(transfered!=commandSize)
+    {
+        std::cout<<"Could not set clock speed\n";
+        std::exit(100);
+    }
+    // get the response back
+    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|IN, command, commandSize, &transfered, TIMEOUT));
+    if(command[1] || transfered != commandSize )
+    {
+        std::cout<<"There was an error setting clock speed.\n";
+        std::exit(101);
+    }
+
+  
+
+    free(command);
+
 
     
 }

@@ -24,7 +24,7 @@ libusb_device* findProgrammer()
         // VID 04d8 (microchip technology)
         // PID 3939 (Arbitrary!)
 
-        if(descriptor.idVendor == 0x4d8 && descriptor.idProduct == 0x3939)
+        if(descriptor.idVendor == 0x4d8 && descriptor.idProduct == 0x00DD)
         {
             programmer = device;
             libusb_ref_device(programmer);
@@ -101,7 +101,7 @@ libusb_device_handle* openProgrammer(libusb_device * programmer)
 }
 
 void closeProgrammer(libusb_device* programmer, libusb_device_handle* handle)
-{   
+{
     if(handle)
     {
         bailOnError(libusb_release_interface(handle, CDC_INTERFACE));
