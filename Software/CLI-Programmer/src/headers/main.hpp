@@ -5,7 +5,7 @@
 
 enum DeviceSpeed
 {
-    HIGH = 7,       // M>>5 375khz (right now: 46.875khz)
+    HIGH = 5,       // M>>5 375khz (right now: 46.875khz)
     LOW = 10,        // M>>10 11.719khz (1465 hz right now)
 };
 
