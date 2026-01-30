@@ -23,7 +23,7 @@ void sendSpeeds(libusb_device_handle* handle)
         // change speed
         if(speed == DeviceSpeed::LOW)
         {
-         //   speed = DeviceSpeed::HIGH;
+            //speed = DeviceSpeed::HIGH;
         }
         else
         {
@@ -37,43 +37,63 @@ void sendSpeeds(libusb_device_handle* handle)
 
 }
 
+void recieveByte(libusb_device_handle* handle)
+{
+    // now recive a byte
+    uint8_t received[2];
+    int transfered = 0;
+    int tries = 0;
+    
+    while(transfered==0)
+    {
+        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|IN, &received[0], 2, &transfered, 3000));
+        tries++;
+        if(tries>=10)
+        {
+            std::cout<<"No data...\n";
+            std::cin.get();
+            return;
+        }
+    
+    }
+    
+    std::cout<<"Got 0x"<<std::hex<<(int)(*received)<<" back. ("<<transfered<<" bytes)\n";
+    std::cin.get();
+
+}
+
 void sendAndRecieve(libusb_device_handle* handle)
 {
-    setSpeed(handle, DeviceSpeed::LOW);
-    uint8_t byte = 0;
+    setSpeed(handle, DeviceSpeed::HIGH);
+
+    // consume any buffered input so we start off on the right foot.
+    int transfered =1;
+     uint8_t received;
+    while(!libusb_bulk_transfer(handle, UART_ENDPOINT|IN, &received, 1, &transfered, 50))
+    {
+        std::cout<<"Woop!\n";
+    }
+
+
+    uint8_t byte[] = {0, 255, 1};
     while(true)
     {
        
-        std::cout<<"Sent 0x"<<std::hex<<(int)byte<<", 0x"<<byte+1<<", 0x"<<byte+2<<".\n";
+        std::cout<<"Sent 0x"<<std::hex<<(int)byte[0]<<", 0x"<<(int)byte[1]<<", 0x"<<(int)byte[2]<<".\n";
 
-        // try to send a number?
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte, 1, nullptr, 3000));
-        std::cout<<(int)byte<<"\n";
-       // std::cin.get();
-        byte++;
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte, 1, nullptr, 3000));
-        std::cout<<(int)byte<<"\n";
-      //  std::cin.get();
-        byte++;
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte, 1, nullptr, 3000));
-        std::cout<<(int)byte<<"\n";
-        byte++;
-
-        // now recive a byte
-        uint8_t recieved;
-        int transfered;
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|IN, &recieved, 1, &transfered, 3000));
-        if(transfered!=1)
+       
+        // Send it all at once?
+        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte[0], 3, nullptr, 3000));
+        
+        for(int i = 0; i<3; i++)
         {
-            std::cout<<"No data...\n";
+            byte[i]++;
         }
-        else
-        {
-            std::cout<<"Got 0x"<<std::hex<<(int)recieved<<" back.\n";
-        }
+      
+        recieveByte(handle);
         
        
-        std::cin.get();
+       
     }   
 }
 

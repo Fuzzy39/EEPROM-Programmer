@@ -1,5 +1,5 @@
-int pins[] = { 2, 3, 4, 5 };
-bool data[4][300];
+  int pins[] = { 2, 3, 4, 5 };
+bool data[4][400];
 
 void setup() {
   // put your setup code here, to run once:
@@ -17,7 +17,7 @@ void loop() {
   if(digitalRead(3)) return;
 
   // capture data
-  for(int j = 0; j<300; j++)
+  for(int j = 0; j<400; j++)
      {
        for(int i = 0; i<sizeof(pins)/sizeof(int); i++)
         {
@@ -29,7 +29,7 @@ void loop() {
   
 
    // spit out the data
-    for(int j = 0; j<300; j++)
+    for(int j = 0; j<400; j++)
     {
          char* str = "x,x,x,x";
 
@@ -42,8 +42,8 @@ void loop() {
          Serial.println(str);
      }
      
-     for(int i = 0; i<100; i++)
+     for(int i = 0; i<50; i++)
      {
-      Serial.println("0,3,4,6");  
+      Serial.println("0,3,5,6");  
      }
 }
