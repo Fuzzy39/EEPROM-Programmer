@@ -1,7 +1,10 @@
 #include <iostream>
 #include "main.hpp"
+#include "Comms.hpp"
 #include <iomanip>
 #include <string.h> 
+#include <stdio.h>
+
 
 void sendSpeeds(libusb_device_handle* handle)
 {
@@ -37,64 +40,66 @@ void sendSpeeds(libusb_device_handle* handle)
 
 }
 
-void recieveByte(libusb_device_handle* handle)
+void read(libusb_device_handle* handle)
 {
-    // now recive a byte
-    uint8_t received[2];
-    int transfered = 0;
-    int tries = 0;
-    
-    while(transfered==0)
+    setSpeed(handle, DeviceSpeed::HIGH);
+    confirmInitialState(handle);
+    for(uint16_t i= 0;  i<256; i++)
     {
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|IN, &received[0], 2, &transfered, 3000));
-        tries++;
-        if(tries>=10)
-        {
-            std::cout<<"No data...\n";
-            std::cin.get();
-            return;
-        }
-    
+        std::cout<<"Reading Addr: 0x"<<std::hex<<(int)i<<"\n";
+        std::cout<<"Got: 0x"<<std::hex<<(int)readByte(handle, i)<<"\n";
     }
     
-    std::cout<<"Got 0x"<<std::hex<<(int)(*received)<<" back. ("<<transfered<<" bytes)\n";
-    std::cin.get();
+    
+}
+
+void readRom(libusb_device_handle* handle, size_t size)
+{
+    setSpeed(handle, DeviceSpeed::HIGH);
+    confirmInitialState(handle);
+
+    uint8_t* buffer = (uint8_t*)malloc(size);
+    std::string filename = "output.bin";
+
+    for(uint16_t i= 0;  i<size; i++)
+    {
+        std::cout<<"Reading Addr: 0x"<<std::hex<<(int)i<<"\n";
+        uint8_t data = readByte(handle, i);
+        std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
+        buffer[i] = data;
+
+    }
+
+    FILE* file = fopen(filename.c_str(), "w");
+    fwrite(buffer, 1, size, file);
+    fclose(file);
+    std::cout<<"Done! Wrote to '"<<buffer<<"'.\n";
 
 }
 
 void sendAndRecieve(libusb_device_handle* handle)
 {
-    setSpeed(handle, DeviceSpeed::HIGH);
+    setSpeed(handle, DeviceSpeed::LOW);
 
-    // consume any buffered input so we start off on the right foot.
-    int transfered =1;
-     uint8_t received;
-    while(!libusb_bulk_transfer(handle, UART_ENDPOINT|IN, &received, 1, &transfered, 50))
-    {
-        std::cout<<"Woop!\n";
-    }
-
-
-    uint8_t byte[] = {0, 255, 1};
+    confirmInitialState(handle);
+    uint8_t toSend[] = {0, 255, 1};
     while(true)
     {
-       
-        std::cout<<"Sent 0x"<<std::hex<<(int)byte[0]<<", 0x"<<(int)byte[1]<<", 0x"<<(int)byte[2]<<".\n";
-
-       
-        // Send it all at once?
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte[0], 3, nullptr, 3000));
+        std::cout<<"Sent 0x"<<std::hex<<(int)toSend[0]<<", 0x"<<(int)toSend[1]<<", 0x"<<(int)toSend[2]<<".\n";
+        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &toSend[0], 3, nullptr, TIMEOUT));  
+        uint8_t received = receiveByte(handle);
         
         for(int i = 0; i<3; i++)
         {
-            byte[i]++;
+            toSend[i]++;
         }
-      
-        recieveByte(handle);
-        
-       
-       
-    }   
+
+        std::cout<<"Got 0x"<<std::hex<<(int)(received)<<" back.\n";
+        std::cin.get();
+
+    }
+
+
 }
 
 int main(void)
@@ -119,19 +124,13 @@ int main(void)
     enumerateProgrammer(programmer);
     libusb_device_handle* handle = openProgrammer(programmer);
 
-    
     //sendSpeeds(handle);
-
-    sendAndRecieve(handle);
+    readRom(handle, 8192);
    
-
     closeProgrammer(programmer, handle);
     libusb_exit(nullptr);
     return 0;
 }
-
-
-
 
 
 
