@@ -55,7 +55,7 @@ void read(libusb_device_handle* handle)
 
 void readRom(libusb_device_handle* handle, size_t size)
 {
-    setSpeed(handle, DeviceSpeed::HIGH);
+    setSpeed(handle, DeviceSpeed::LOW);
     confirmInitialState(handle);
 
     uint8_t* buffer = (uint8_t*)malloc(size);
@@ -63,9 +63,12 @@ void readRom(libusb_device_handle* handle, size_t size)
 
     for(uint16_t i= 0;  i<size; i++)
     {
-        std::cout<<"Reading Addr: 0x"<<std::hex<<(int)i<<"\n";
+        if(i%(1024/8)==0)
+        {
+            std::cout<<"0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<"...\n";
+        }
         uint8_t data = readByte(handle, i);
-        std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
+        //std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
         buffer[i] = data;
 
     }
@@ -73,7 +76,7 @@ void readRom(libusb_device_handle* handle, size_t size)
     FILE* file = fopen(filename.c_str(), "w");
     fwrite(buffer, 1, size, file);
     fclose(file);
-    std::cout<<"Done! Wrote to '"<<buffer<<"'.\n";
+    std::cout<<"Done! Wrote to '"<<filename.c_str()<<"'.\n";
 
 }
 

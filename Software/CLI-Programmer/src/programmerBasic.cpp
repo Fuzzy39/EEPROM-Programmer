@@ -117,7 +117,7 @@ void closeProgrammer(libusb_device* programmer, libusb_device_handle* handle)
 
 void setSpeed(libusb_device_handle* handle, DeviceSpeed speed)
 {
-    int dividerSlow = 3;
+    int dividerSlow = 0; // 0 or 3.
     // baud, fortunately, isn't too bad to calculate.
     const int MAX_CLOCK = 12000000; // 12 mhz
     int baud = MAX_CLOCK>>speed>>dividerSlow; // the 2 is there because of the current placement of the jumper wire.
