@@ -91,10 +91,17 @@ libusb_device_handle* openProgrammer(libusb_device * programmer)
     bailOnError(libusb_open(programmer, &handle));
     std::cout<<"\nOpened device for communciations.\n";
 
-    bailOnError(libusb_set_auto_detach_kernel_driver(handle, 1));
+    int err = libusb_set_auto_detach_kernel_driver(handle, 1);
+    if(err && err != LIBUSB_ERROR_NOT_SUPPORTED)
+    {
+        bailOnError(err);
+    }
+    std::cout<<"\nPassed\n";
     // claim the cdc and hid interfaces.
     bailOnError(libusb_claim_interface(handle, CDC_INTERFACE));
+     std::cout<<"Passed\n";
     bailOnError(libusb_claim_interface(handle, CDC_DATA_INTERFACE));
+     std::cout<<"passed\n";
     bailOnError(libusb_claim_interface(handle, HID_INTERFACE));
     std::cout<<"Claimed interfaces.\n";
 
