@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+
 
 void main(void)
 {
@@ -6,17 +9,11 @@ void main(void)
 
     FILE* fptr = fopen("rom.bin", "w");
     int size = 8192;
-    int i = 0;
-    for(unsigned char j = 0;i<256; i++)
+    srand(time(NULL));   // Initialization, should only be called once.
+    for(int i=0;i<size/sizeof(int); i++)
     {
-        fwrite(&j, 1, 1, fptr);
-        j++;
-    }
-
-    for(;i<size; i++)
-    {
-        int data = 0;
-        fwrite(&data, 1,1,fptr);
+        char data = rand();
+        fwrite(&data, sizeof(char),1,fptr);
     }
     // Write some text to the file
    

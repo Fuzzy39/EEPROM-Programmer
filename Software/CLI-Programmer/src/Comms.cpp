@@ -12,7 +12,7 @@ uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uin
 
        
     // Do the transfer. Pretty simple!
-    bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|OUT, &toSend[0], 3, nullptr, TIMEOUT));  
+    bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, &toSend[0], 3, nullptr, TIMEOUT));  
     return receiveByte(programmer);
     
 }
@@ -40,7 +40,7 @@ uint8_t receiveByte(libusb_device_handle* programmer)
     // make sure we get it.
     while(transfered==0)
     {
-        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|IN, &toReturn, 1, &transfered, TIMEOUT));
+        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_IN, &toReturn, 1, &transfered, TIMEOUT));
         tries++;
         if(tries>=3)
         {
@@ -65,7 +65,7 @@ bool maybeReceiveByte(libusb_device_handle* programmer, uint8_t* byte)
     {
         tries++;
         // we don't care if this times out. Other errors would be an issue, but... it's probably fine. (totally).
-        libusb_bulk_transfer(programmer, UART_ENDPOINT|IN, byte, 1, &transfered, 50);
+        libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_IN, byte, 1, &transfered, 50);
         
         if(tries>=3)
         {
@@ -86,7 +86,7 @@ void confirmInitialState(libusb_device_handle* programmer)
     // consume any buffered input so we start off on the right foot.
     int transfered =1;
     uint8_t received;
-    while(!libusb_bulk_transfer(programmer, UART_ENDPOINT|IN, &received, 1, &transfered, 50)){}
+    while(!libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_IN, &received, 1, &transfered, 50)){}
 
     // While there is a power on reset circuit, we can't neccesarily trust it. Even if it works, the shift registers will have random data in them...
     // this could be fixed in hardware... hold that thought.
@@ -98,7 +98,7 @@ void confirmInitialState(libusb_device_handle* programmer)
     while(!maybeReceiveByte(programmer, &received))
     {
         
-        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
+        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
     }
     // do it again. Since we can't garuntee that the device was at the inital state
     // but the shift registers might still contain garbage if the device wasn't.
@@ -107,7 +107,7 @@ void confirmInitialState(libusb_device_handle* programmer)
     while(!maybeReceiveByte(programmer, &received))
     {
       
-        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
+        bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
     }
     
     std::cout<<"Initialized. It is now safe to insert the EEPROM.\n";

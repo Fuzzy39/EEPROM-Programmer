@@ -1,5 +1,6 @@
 #pragma once
 #include <libusb-1.0/libusb.h>
+#include <cstdint>
 #include "main.hpp"
 
 enum RW

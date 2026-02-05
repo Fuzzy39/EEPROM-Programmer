@@ -144,20 +144,20 @@ void setSpeed(libusb_device_handle* handle, DeviceSpeed speed)
 
     // we have to send a command to the HID device now...
     size_t commandSize = 0x40;
-    u_int8_t * command = (u_int8_t*)calloc(commandSize, sizeof(u_int8_t));
+    uint8_t * command = (uint8_t*)calloc(commandSize, sizeof(uint8_t));
     command[0]=0x60; // set SRAM settings
     // change the clock speed
     command[2]=0b10010000 | shiftsToMCP;
     // we can leave everything else 0 and we should be fine
 
-    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|OUT, command, commandSize, &transfered, TIMEOUT));
+    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|USB_OUT, command, commandSize, &transfered, TIMEOUT));
     if(transfered!=commandSize)
     {
         std::cout<<"Could not set clock speed\n";
         std::exit(100);
     }
     // get the response back
-    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|IN, command, commandSize, &transfered, TIMEOUT));
+    bailOnError(libusb_interrupt_transfer(handle, HID_ENDPOINT|USB_IN, command, commandSize, &transfered, TIMEOUT));
     if(command[1] || transfered != commandSize )
     {
         std::cout<<"There was an error setting clock speed.\n";

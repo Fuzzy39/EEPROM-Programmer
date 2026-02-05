@@ -1,5 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <libusb-1.0/libusb.h>
+
 
 // nothing here...
 
@@ -13,15 +15,15 @@ enum DeviceSpeed
 
 
 const int CDC_INTERFACE = 0;
-const int CDC_DATA_INTERFACE = 1;
+const int CDC_DATA_INTERFACE = 1;   
 const int HID_INTERFACE = 2;
 
 // endpoints
 const uint8_t CDC_ENDPOINT = 0x01;
 const uint8_t UART_ENDPOINT = 0x02;
 const uint8_t HID_ENDPOINT = 0x03;
-const uint8_t IN = 0x80;
-const uint8_t OUT = 0x00;
+const uint8_t USB_IN = 0x80;
+const uint8_t USB_OUT = 0x00;
 
 // ms   
 const int TIMEOUT = 1000;

@@ -2,3 +2,6 @@ Software/rust-test/target
 Software/CLI-Programmer/bin
 *.bin
 *.vscode
+*.exe
+*.out
+*.obj

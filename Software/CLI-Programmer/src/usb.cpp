@@ -37,7 +37,6 @@ void listDevices()
 }
 
 
-
 void bailOnError(int err)
 {
     if(!err) return;

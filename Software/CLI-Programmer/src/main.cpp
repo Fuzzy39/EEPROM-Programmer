@@ -20,7 +20,7 @@ void sendSpeeds(libusb_device_handle* handle)
         // set speed
         setSpeed(handle, speed);
         // send data
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &byte, 1, nullptr, 3000));
+        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|USB_OUT, &byte, 1, nullptr, 3000));
         // fingers crossed!
 
         // change speed
@@ -89,7 +89,7 @@ void sendAndRecieve(libusb_device_handle* handle)
     while(true)
     {
         std::cout<<"Sent 0x"<<std::hex<<(int)toSend[0]<<", 0x"<<(int)toSend[1]<<", 0x"<<(int)toSend[2]<<".\n";
-        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|OUT, &toSend[0], 3, nullptr, TIMEOUT));  
+        bailOnError(libusb_bulk_transfer(handle, UART_ENDPOINT|USB_OUT, &toSend[0], 3, nullptr, TIMEOUT));  
         uint8_t received = receiveByte(handle);
         
         for(int i = 0; i<3; i++)
@@ -132,6 +132,7 @@ int main(void)
    
     closeProgrammer(programmer, handle);
     libusb_exit(nullptr);
+    
     return 0;
 }
 
