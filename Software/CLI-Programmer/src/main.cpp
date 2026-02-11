@@ -58,12 +58,19 @@ void readRom(libusb_device_handle* handle, size_t size)
     setSpeed(handle, DeviceSpeed::LOW);
     confirmInitialState(handle);
 
+    // read rom file!
+    uint8_t* actual = (uint8_t*)malloc(size);
+    FILE* file = fopen("rom.bin", "rb");
+    fread(actual, 1, size, file);
+    fclose(file);
+
+
     uint8_t* buffer = (uint8_t*)malloc(size);
     std::string filename = "output.bin";
 
     for(uint16_t i= 0;  i<size; i++)
     {
-        if(i%(1024/8)==0)
+        if(i%(1024/4)==0)
         {
             std::cout<<"0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<"...\n";
         }
@@ -71,11 +78,22 @@ void readRom(libusb_device_handle* handle, size_t size)
         //std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
         buffer[i] = data;
 
+        if(data != actual[i])
+        {
+            std::cout<<"Error at 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<": Got 0x"
+                <<std::setw(2)<<(int)buffer[i]<<", Expected 0x"<<(int)actual[i]<<".";
+            std::cin.get();
+        }
+
     }
 
-    FILE* file = fopen(filename.c_str(), "w");
+   
+    file = fopen(filename.c_str(), "wb");
     fwrite(buffer, 1, size, file);
     fclose(file);
+
+    free(actual);
+    free(buffer);
     std::cout<<"Done! Wrote to '"<<filename.c_str()<<"'.\n";
 
 }
