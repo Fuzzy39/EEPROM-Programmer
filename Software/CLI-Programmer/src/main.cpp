@@ -55,7 +55,7 @@ void read(libusb_device_handle* handle)
 
 void readRom(libusb_device_handle* handle, size_t size)
 {
-    setSpeed(handle, DeviceSpeed::LOW);
+    setSpeed(handle, DeviceSpeed::HIGH);
     confirmInitialState(handle);
 
     // read rom file!
