@@ -20,7 +20,7 @@ uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uin
 
 uint8_t readByte(libusb_device_handle* programmer, uint16_t addr)
 {
-    return doCommsCycle(programmer, addr, RW::R, 0x00);
+    return doCommsCycle(programmer, addr, RW::R, 0x10);
 }
 
 void writeByte(libusb_device_handle *programmer, uint16_t addr, uint8_t data)

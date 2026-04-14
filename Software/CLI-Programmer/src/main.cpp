@@ -68,7 +68,8 @@ void readRom(libusb_device_handle* handle, size_t size)
     uint8_t* buffer = (uint8_t*)malloc(size);
     std::string filename = "output.bin";
 
-    for(uint16_t i= 0;  i<size; i++)
+    for(uint16_t i= 0;  i<size
+        ; i++)
     {
         if(i%(1024/4)==0)
         {
@@ -77,11 +78,12 @@ void readRom(libusb_device_handle* handle, size_t size)
         uint8_t data = readByte(handle, i);
         //std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
         buffer[i] = data;
+        uint8_t expected = 0x10; // actual[i];
 
-        if(data != actual[i])
+        if(data != expected)
         {
             std::cout<<"Error at 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<": Got 0x"
-                <<std::setw(2)<<(int)buffer[i]<<", Expected 0x"<<(int)actual[i]<<".";
+                <<std::setw(2)<<(int)buffer[i]<<", Expected 0x"<<(int)expected<<".";
             std::cin.get();
         }
 
