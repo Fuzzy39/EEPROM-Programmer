@@ -44,6 +44,6 @@ void loop() {
      
      for(int i = 0; i<50; i++)
      {
-      Serial.println("0,3,5,6");  
+      Serial.println("0,3,4,6");  
      }
 }

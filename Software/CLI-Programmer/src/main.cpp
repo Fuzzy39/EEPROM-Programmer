@@ -42,7 +42,7 @@ void sendSpeeds(libusb_device_handle* handle)
 
 void read(libusb_device_handle* handle)
 {
-    setSpeed(handle, DeviceSpeed::HIGH);
+    setSpeed(handle, DeviceSpeed::LOW);
     confirmInitialState(handle);
     for(uint16_t i= 0;  i<256; i++)
     {
@@ -55,7 +55,7 @@ void read(libusb_device_handle* handle)
 
 void readRom(libusb_device_handle* handle, size_t size)
 {
-    setSpeed(handle, DeviceSpeed::HIGH);
+    setSpeed(handle, DeviceSpeed::LOW);
     confirmInitialState(handle);
 
     // read rom file!
@@ -75,10 +75,10 @@ void readRom(libusb_device_handle* handle, size_t size)
         {
             std::cout<<"0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<"...\n";
         }
-        uint8_t data = readByte(handle, i);
+        uint8_t data = readByte(handle, i); // i
         //std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
         buffer[i] = data;
-        uint8_t expected = 0x10; // actual[i];
+        uint8_t expected = actual[i];
 
         if(data != expected)
         {
@@ -105,7 +105,7 @@ void sendAndRecieve(libusb_device_handle* handle)
     setSpeed(handle, DeviceSpeed::LOW);
 
     confirmInitialState(handle);
-    uint8_t toSend[] = {0, 255, 1};
+    uint8_t toSend[] = {0, 0, 0};
     while(true)
     {
         std::cout<<"Sent 0x"<<std::hex<<(int)toSend[0]<<", 0x"<<(int)toSend[1]<<", 0x"<<(int)toSend[2]<<".\n";
@@ -149,6 +149,7 @@ int main(void)
 
     //sendSpeeds(handle);
     readRom(handle, 8192);
+    //sendAndRecieve(handle);
    
     closeProgrammer(programmer, handle);
     libusb_exit(nullptr);
