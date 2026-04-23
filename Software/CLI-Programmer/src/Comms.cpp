@@ -1,5 +1,115 @@
 #include "Comms.hpp"
 #include <iostream>
+#include <iomanip>
+#include <thread>
+
+bool readRomAndVerify(libusb_device_handle* handle, std::string verifyFromPath, size_t size)
+{
+    setSpeed(handle, DeviceSpeed::HIGH); // comms is unreliable on low speed, for some reason.
+    confirmInitialState(handle);
+
+    // read rom file!
+    uint8_t* actual = (uint8_t*)malloc(size);
+    FILE* file = fopen(verifyFromPath.c_str(), "rb");
+    fread(actual, 1, size, file);
+    fclose(file);
+
+
+    bool toReturn = verifyRom(handle, actual, size);
+    free(actual);
+    return toReturn;
+}
+
+bool verifyRom(libusb_device_handle* handle, uint8_t* actual, size_t size)
+{
+
+    uint8_t* buffer = (uint8_t*)malloc(size);
+    bool success = true;
+
+    for(uint16_t i= 0;  i<size; i++)
+    {
+        if(i%(1024/4)==0)
+        {
+            std::cout<<"0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<"...\n";
+        }
+        uint8_t data = readByte(handle, i); // i
+        //std::cout<<"Got: 0x"<<std::hex<<(int)data<<"\n";
+        buffer[i] = data;
+        uint8_t expected = actual[i];
+
+        if(data != expected)
+        {
+            std::cout<<"Error at 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<": Got 0x"
+                <<std::setw(2)<<(int)buffer[i]<<", Expected 0x"<<(int)expected<<".";
+            std::cin.get();
+            success = false;
+
+        }
+
+    }
+
+    free(buffer);
+    std::cout<<(success? "Done! Contents verified.\n": "Done. Failed to Verify.\n");
+    return success;
+}
+
+void readRom(libusb_device_handle* handle, std::string writeTo, size_t size)
+{
+    setSpeed(handle, DeviceSpeed::HIGH); // comms is unreliable on low speed, for some reason.
+    confirmInitialState(handle);
+
+
+    // read data off the rom.
+    uint8_t* buffer = (uint8_t*)malloc(size);
+    for(uint16_t i= 0;  i<size; i++)
+    {
+        if(i%(1024/4)==0)
+        {
+            std::cout<<"0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)i<<"...\n";
+        }
+        uint8_t data = readByte(handle, i); // i
+        buffer[i] = data;
+
+    }
+
+    // write to output.
+    FILE* file = fopen(writeTo.c_str(), "wb");
+    fwrite(buffer, 1, size, file);
+    fclose(file);
+    std::cout<<"Done! Wrote to '"<<writeTo.c_str()<<"'.\n";
+
+}
+
+
+bool writeRom(libusb_device_handle* handle, size_t size, uint8_t* data, size_t pageSize, std::chrono::microseconds delayBetweenPageWrites)
+{
+    setSpeed(handle, DeviceSpeed::HIGH); // comms is unreliable on low speed, for some reason.
+    confirmInitialState(handle);
+
+    for(int i = 0; i<size/pageSize; i++)
+    {
+        for(int j = 0; j<pageSize; j++)
+        {
+            size_t index = i*pageSize+j;
+            if(index%(1024/4)==0)
+            {
+                std::cout<<"Writing: 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)(i*pageSize)<<"...\n";
+            }
+            uint8_t toWrite = data[index];
+            writeByte(handle, index, toWrite);
+        }
+        // delay 
+        // we could speed this up probably by reducing the delay by the time it'll take to send all the data over, but it's not very much.
+        // ~64 us compared to 10ms.
+        std::this_thread::sleep_for(delayBetweenPageWrites);
+    }   
+
+    std::cout<<"Data written. Verifying...\n\n";
+    return verifyRom(handle, data, size);
+}
+
+
+
 
 uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uint8_t data)
 {
