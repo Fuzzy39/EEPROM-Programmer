@@ -81,10 +81,16 @@ void readRom(libusb_device_handle* handle, std::string writeTo, size_t size)
 }
 
 
-bool writeRom(libusb_device_handle* handle, size_t size, uint8_t* data, size_t pageSize, std::chrono::microseconds delayBetweenPageWrites)
+bool writeRom(libusb_device_handle* handle, size_t size, std::string writeFrom, size_t pageSize, std::chrono::microseconds delayBetweenPageWrites)
 {
     setSpeed(handle, DeviceSpeed::HIGH); // comms is unreliable on low speed, for some reason.
     confirmInitialState(handle);
+
+    // read data file
+    uint8_t* data = (uint8_t*)malloc(size);
+    FILE* file = fopen(writeFrom.c_str(), "rb");
+    fread(data, 1, size, file);
+    fclose(file);
 
     for(int i = 0; i<size/pageSize; i++)
     {
@@ -96,7 +102,7 @@ bool writeRom(libusb_device_handle* handle, size_t size, uint8_t* data, size_t p
                 std::cout<<"Writing: 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)(i*pageSize)<<"...\n";
             }
             uint8_t toWrite = data[index];
-            writeByte(handle, index, toWrite);
+            writeByte(handle, index, toWrite, false);
         }
         // delay 
         // we could speed this up probably by reducing the delay by the time it'll take to send all the data over, but it's not very much.
@@ -104,14 +110,23 @@ bool writeRom(libusb_device_handle* handle, size_t size, uint8_t* data, size_t p
         std::this_thread::sleep_for(delayBetweenPageWrites);
     }   
 
+    // clear the input buffer if it's built up (garbage often does)
+    /*uint8_t* garbage = (uint8_t*)malloc(size);
+    int transfered;
+    libusb_bulk_transfer(handle, UART_ENDPOINT|USB_IN, garbage, size, &transfered, 50);
+    free(garbage);*/
+   
+    // verify rom.
     std::cout<<"Data written. Verifying...\n\n";
-    return verifyRom(handle, data, size);
+    bool toReturn = verifyRom(handle, data, size);
+    free(data);
+    return toReturn;
 }
 
 
 
 
-uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uint8_t data)
+uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uint8_t data, bool lazy)
 {
     // first combine the data into what we actually want.
     uint8_t byte2 = (addr>>8)|(rw<<7);
@@ -123,19 +138,24 @@ uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uin
        
     // Do the transfer. Pretty simple!
     bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, &toSend[0], 3, nullptr, TIMEOUT));  
-    return receiveByte(programmer);
+    if(!lazy) return receiveByte(programmer);
+
+    // if we don't care about the return value, we basically toss it.
+    // there's some kind of read buffer somewhere, and it's going to fill with garbage.
+    // but we're being lazy. this will need to be dealt with before actually reading, though.
+    return 0;
     
 }
 
 
 uint8_t readByte(libusb_device_handle* programmer, uint16_t addr)
 {
-    return doCommsCycle(programmer, addr, RW::R, 0x00);
+    return doCommsCycle(programmer, addr, RW::R, 0x00, false);
 }
 
-void writeByte(libusb_device_handle *programmer, uint16_t addr, uint8_t data)
+void writeByte(libusb_device_handle *programmer, uint16_t addr, uint8_t data, bool lazy)
 {
-    doCommsCycle(programmer, addr, RW::W, data);
+    doCommsCycle(programmer, addr, RW::W, data, lazy);
 }
 
 uint8_t receiveByte(libusb_device_handle* programmer)
@@ -152,6 +172,7 @@ uint8_t receiveByte(libusb_device_handle* programmer)
     {
         bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_IN, &toReturn, 1, &transfered, TIMEOUT));
         tries++;
+        //if(tries == 2) std::cout<<"Honk!";
         if(tries>=3)
         {
             std::cout<<"ERROR: receiveByte failed to get data.\n";

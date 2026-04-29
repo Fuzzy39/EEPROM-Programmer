@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <string.h> 
 #include <stdio.h>
+#include <thread>
 
 
 void sendSpeeds(libusb_device_handle* handle)
@@ -47,10 +48,20 @@ void read(libusb_device_handle* handle)
     for(uint16_t i= 0;  i<256; i++)
     {
         std::cout<<"Reading Addr: 0x"<<std::hex<<(int)i<<"\n";
-        std::cout<<"Got: 0x"<<std::hex<<(int)readByte(handle, i)<<"\n";
+        std::cout<<"    Got: 0x"<<std::hex<<(int)readByte(handle, i)<<"\n";
     }
-    
-    
+}
+
+void writeTest(libusb_device_handle* handle)
+{
+    setSpeed(handle, DeviceSpeed::HIGH);
+    confirmInitialState(handle);
+
+    writeByte(handle, 0x0000, 0xf3, false);
+    std::cout<<"Wrote a byte...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    uint8_t byte = readByte(handle, 0x0000);
+    std::cout<<"Got: 0x"<<std::hex<<(int)byte<<"\n";
 }
 
 
@@ -102,9 +113,16 @@ int main(void)
     libusb_device_handle* handle = openProgrammer(programmer);
 
     //sendSpeeds(handle);
-    readRomAndVerify(handle, "rom.bin", 8192);
     //sendAndRecieve(handle);
+    //read(handle);
+
+    //readRomAndVerify(handle, "rom.bin", 8192);
+    //readRom(handle, "segmentData.bin", 8192);
+    writeRom(handle, 8192, "data.bin", 1, std::chrono::microseconds(10000));
+    
+    //writeTest(handle);
    
+
     closeProgrammer(programmer, handle);
     libusb_exit(nullptr);
     

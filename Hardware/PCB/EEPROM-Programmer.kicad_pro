@@ -655,7 +655,7 @@
         "uuid": "d87f1d9a-2aed-49cd-be27-2f3d60d4f0c5"
       }
     ],
-    "used_designators": "OR3B1,OR3A1,OR3C1,AND1-3,AND12,JP1-2,R1-3,D1-3,#PWR1-5,U1-15",
+    "used_designators": "NOT1,AND9B1,AND9A1,AND6A1,AND4-6,AND8-11,AND6B1,AT28C256,OR1-2,U4,U9-13",
     "variants": []
   },
   "sheets": [
@@ -670,6 +670,14 @@
     [
       "ab923bbb-ebaf-4b29-b590-5019bdada8b6",
       "State Machine"
+    ],
+    [
+      "4d00c3ad-9b68-4e68-b0f9-65e785fb813f",
+      "Data Handling"
+    ],
+    [
+      "88f28bfe-e4bd-40f3-a84a-810ee06f52af",
+      "Logic"
     ]
   ],
   "text_variables": {},
