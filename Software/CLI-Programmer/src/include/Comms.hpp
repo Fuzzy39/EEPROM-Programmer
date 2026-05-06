@@ -19,6 +19,7 @@ void readRom(libusb_device_handle* handle, std::string writeTo, size_t size);
 // page size should probably be a power of 2.
 bool writeRom(libusb_device_handle* handle, size_t size, std::string writeFrom, size_t pageSize, 
     std::chrono::microseconds delayBetweenPageWrites);
+bool verifyAndFixPage(libusb_device_handle* handle, uint16_t baseAddr, size_t pageSize, uint8_t* data);
 
 
 

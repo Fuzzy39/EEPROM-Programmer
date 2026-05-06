@@ -116,9 +116,9 @@ int main(void)
     //sendAndRecieve(handle);
     //read(handle);
 
-    //readRomAndVerify(handle, "rom.bin", 8192);
+    //readRomAndVerify(handle, "segmentData.bin", 8192);
     //readRom(handle, "segmentData.bin", 8192);
-    writeRom(handle, 8192, "data.bin", 1, std::chrono::microseconds(10000));
+    writeRom(handle, 8192, "segmentData.bin", 64, std::chrono::microseconds(10000));
     
     //writeTest(handle);
    

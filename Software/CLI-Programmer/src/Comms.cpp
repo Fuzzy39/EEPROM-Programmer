@@ -89,6 +89,12 @@ bool writeRom(libusb_device_handle* handle, size_t size, std::string writeFrom, 
     // read data file
     uint8_t* data = (uint8_t*)malloc(size);
     FILE* file = fopen(writeFrom.c_str(), "rb");
+    if(file == nullptr)
+    {
+        std::cout<<"'"<<writeFrom<<"' does not exist or cannot be opened.\n";
+        free(data);
+        return false;
+    }
     fread(data, 1, size, file);
     fclose(file);
 
@@ -97,17 +103,40 @@ bool writeRom(libusb_device_handle* handle, size_t size, std::string writeFrom, 
         for(int j = 0; j<pageSize; j++)
         {
             size_t index = i*pageSize+j;
-            if(index%(1024/4)==0)
+            if(j==0)
             {
                 std::cout<<"Writing: 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)(i*pageSize)<<"...\n";
             }
             uint8_t toWrite = data[index];
             writeByte(handle, index, toWrite, false);
+
+      
+
         }
         // delay 
         // we could speed this up probably by reducing the delay by the time it'll take to send all the data over, but it's not very much.
         // ~64 us compared to 10ms.
         std::this_thread::sleep_for(delayBetweenPageWrites);
+
+        bool pageOk = false;
+        for(int j = 0; j<50; j++)
+        {
+            if(verifyAndFixPage(handle, i, pageSize, data))
+            {
+                std::cout<<"page ok.\n";
+                pageOk = true;
+                break;
+            }
+            std::cout<<"Attempting to fix write errors.\n";
+            std::this_thread::sleep_for(delayBetweenPageWrites);
+        }
+        if(!pageOk)
+        {
+            std::cout<<"Wrote page with error(s).\n";
+            std::cin.get();
+        }
+
+      
     }   
 
     // clear the input buffer if it's built up (garbage often does)
@@ -124,6 +153,31 @@ bool writeRom(libusb_device_handle* handle, size_t size, std::string writeFrom, 
 }
 
 
+bool verifyAndFixPage(libusb_device_handle* handle, uint16_t baseAddr, size_t pageSize, uint8_t* data)
+{
+      // verify
+    bool okay = true;
+    for(int j = 0; j<pageSize; j++)
+    {
+        size_t index = baseAddr*pageSize+j;
+        uint8_t correct = data[index];
+        uint8_t actual = readByte(handle, index);
+        if(correct!=actual)
+        {
+
+            okay = false;
+            // std::cout<<"Error at 0x"<<std::hex<<std::setw(4) << std::setfill('0')<<(int)index<< std::setw(2)
+            // false//     <<": Expected 0x"<<(int)correct<<", Got 0x"<<(int)actual<<".\n";
+            // std::cin.get();
+            // try to fix
+            writeByte(handle, index, data[index], false);
+        }
+    
+
+
+    }
+    return okay;
+}
 
 
 uint8_t doCommsCycle(libusb_device_handle* programmer, uint16_t addr, RW rw, uint8_t data, bool lazy)
@@ -226,19 +280,32 @@ void confirmInitialState(libusb_device_handle* programmer)
     uint32_t data = 0xFFFFFFFF;
     
     // garuntee the device is at the initial state by waiting until it sends data back.
+    uint8_t tries = 0;
     while(!maybeReceiveByte(programmer, &received))
     {
         
         bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
+        tries++;
+        if(tries>3)
+        {
+            std::cout<<"ERROR: No data was returned by the programmer. Something is wrong with it.\n";
+            std::exit(1);
+        }
     }
     // do it again. Since we can't garuntee that the device was at the inital state
     // but the shift registers might still contain garbage if the device wasn't.
     // running it again will clear everything out.
-
+    tries = 0;
     while(!maybeReceiveByte(programmer, &received))
     {
       
         bailOnError(libusb_bulk_transfer(programmer, UART_ENDPOINT|USB_OUT, (uint8_t*)&data, 1, nullptr, TIMEOUT));
+        tries++;
+        if(tries>3)
+        {
+            std::cout<<"ERROR: data was not returned by the programmer. Something is probably wrong with it.\n";
+            std::exit(1);
+        }
     }
     
     std::cout<<"Initialized. It is now safe to insert the EEPROM.\n";
