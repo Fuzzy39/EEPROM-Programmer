@@ -655,7 +655,7 @@
         "uuid": "d87f1d9a-2aed-49cd-be27-2f3d60d4f0c5"
       }
     ],
-    "used_designators": "",
+    "used_designators": "#PWR19-31,AND6A1,NOT1-2,C2-17,AND6B1,AND4-6,AND8-9,OR1-2,U15-16,ANDb1,D4,R4",
     "variants": []
   },
   "sheets": [
@@ -674,10 +674,6 @@
     [
       "4d00c3ad-9b68-4e68-b0f9-65e785fb813f",
       "Data Handling"
-    ],
-    [
-      "88f28bfe-e4bd-40f3-a84a-810ee06f52af",
-      "Logic"
     ]
   ],
   "text_variables": {},
